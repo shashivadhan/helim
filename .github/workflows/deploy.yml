@@ -1,0 +1,49 @@
+name: Deploy to GKE with Helm (Keyless)
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - id: auth
+      name: Authenticate to GCP via Workload Identity Federation
+      uses: google-github-actions/auth@v3
+      with:
+        workload_identity_provider: "projects/1014437436977/locations/global/workloadIdentityPools/github-h/providers/github-provider-h"
+        service_account: "github-actions@saikiran-gcp.iam.gserviceaccount.com"
+
+    - name: Configure Docker auth
+      run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+    - name: Build & push Docker image
+      run: |
+        IMAGE="us-central1-docker.pkg.dev/saikiran-gcp/my-docker-repo/python-app:latest"
+        docker build -t $IMAGE .
+        docker push $IMAGE
+
+    - name: Get GKE credentials
+      uses: google-github-actions/get-gke-credentials@v3
+      with:
+        cluster_name: "demo-cluster"
+        location: "us-central1"
+        project_id: "saikiran-gcp"
+
+    - name: Install Helm
+      uses: azure/setup-helm@v4
+
+    - name: Deploy via Helm
+      run: |
+        helm upgrade --install python-app ./python-app \
+          --set image.repository=us-central1-docker.pkg.dev/saikiran-gcp/my-docker-repo/python-app \
+          --set image.tag=latest
