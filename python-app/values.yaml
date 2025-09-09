@@ -1,5 +1,13 @@
 replicaCount: 1
 
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
 image:
   repository: us-central1-docker.pkg.dev/saikiran-gcp/my-docker-repo/python-app
   tag: "latest"
