@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: python-app
-  labels:
-    app: python-app
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -20,9 +18,4 @@ spec:
           ports:
             - containerPort: 5000
           resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-            limits:
-              cpu: 200m
-              memory: 256Mi
+            {{- toYaml .Values.resources | nindent 12 }}
